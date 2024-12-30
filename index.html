@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Upload Form</title>
+</head>
+<body>
+    <h1>Upload Your Audio Files</h1>
+    <form id="audioForm" action="/upload" method="post" enctype="multipart/form-data">
+        <label for="username">Enter Your Name:</label>
+        <input type="text" id="username" name="username" required>
+        <br><br>
+
+        <label for="audio1">Upload Audio 1:</label>
+        <input type="file" id="audio1" name="audio1" accept="audio/*" required>
+        <br><br>
+
+        <label for="audio2">Upload Audio 2:</label>
+        <input type="file" id="audio2" name="audio2" accept="audio/*" required>
+        <br><br>
+
+        <label for="audio3">Upload Audio 3:</label>
+        <input type="file" id="audio3" name="audio3" accept="audio/*" required>
+        <br><br>
+
+        <label for="audio4">Upload Audio 4:</label>
+        <input type="file" id="audio4" name="audio4" accept="audio/*" required>
+        <br><br>
+
+        <label for="audio5">Upload Audio 5:</label>
+        <input type="file" id="audio5" name="audio5" accept="audio/*" required>
+        <br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        document.getElementById('audioForm').addEventListener('submit', function(event) {
+            const form = event.target;
+            const formData = new FormData(form);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error uploading the files.');
+            });
+
+            event.preventDefault();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+node_modules
+__pycache__
+demo_audio
+Detilas and resources
+myenv
+accuracy_test.py
+demo.py
+GetFiles.pyc
+recording.py
+package-lock.json

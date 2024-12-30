@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Single Audio</title>
+</head>
+<body>
+    <h1>Upload Your Audio File for Prediction</h1>
+    <form id="singleAudioForm" action="/upload-single" method="post" enctype="multipart/form-data">
+        <label for="username">Enter Your Name:</label>
+        <input type="text" id="username" name="username" required>
+        <br><br>
+
+        <label for="audio">Upload Your Audio:</label>
+        <input type="file" id="audio" name="audio" accept="audio/*" required>
+        <br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        document.getElementById('singleAudioForm').addEventListener('submit', function(event) {
+            const form = event.target;
+            const formData = new FormData(form);
+
+            fetch('/upload-single', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error uploading the file.');
+            });
+
+            event.preventDefault();
+        });
+    </script>
+</body>
+</html>
