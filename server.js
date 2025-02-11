@@ -5,6 +5,10 @@ const fs = require('fs');
 const { spawn } = require('child_process'); // To run the python script
 const app = express();
 const port = 3000;
+const cors = require('cors');
+
+// Allow requests from localhost:3000
+app.use(cors());
 
 // Define the folders to save the audio files
 const trainFolder = 'C:/mfcc and gmm/New folder/GMM/dataset/train';
@@ -22,20 +26,21 @@ if (!fs.existsSync(predictFolder)) {
 // Set up multer storage configuration for 5 audio files (for training)
 const storageTrain = multer.diskStorage({
   destination: function (req, file, cb) {
-    const userFolder = path.join(trainFolder, req.body.username);
+    const username = req.body.username || "default_user"; // Fallback to avoid undefined
+    const userFolder = path.join(trainFolder, username);
 
-    // Create a new folder for the user if it doesn't exist
     if (!fs.existsSync(userFolder)) {
       fs.mkdirSync(userFolder, { recursive: true });
     }
 
-    cb(null, userFolder); // Set the destination folder for training
+    cb(null, userFolder);
   },
   filename: function (req, file, cb) {
-    const filename = file.originalname.split('.')[0] + '-' + Date.now() + path.extname(file.originalname);
-    cb(null, filename); // Save the file with a unique name
+    const filename = Date.now() + "-" + file.originalname;
+    cb(null, filename);
   }
 });
+
 
 // Create an upload instance for 5 audio files (for training)
 const uploadTrain = multer({
@@ -99,6 +104,28 @@ app.get('/predict', (req, res) => {
   res.sendFile(path.join(__dirname, 'single-upload.html')); // Your form for uploading 1 audio file for prediction
 });
 
+// Dummy Whisper 
+app.post('/whisper', (req, res) => {
+  res.json({
+    "transcription": "१२०३४५६७८९",
+    "translation": "122345667"
+  }) // Your form for uploading 1 audio file for prediction
+});
+
+//Dummy MFCC
+app.post('/mfcc', (req, res) => {
+  res.json({
+    "match": true,
+  }) // Your form for uploading 1 audio file for prediction
+});
+
+
+//Dummy Registration
+app.post('/register',(req,res)=>{
+  res.json({
+    "message":"Successful registration!",
+  })
+});
 // Handle the file upload request for training (5 audio files)
 app.post('/upload', (req, res) => {
   uploadTrain(req, res, (err) => {
@@ -167,31 +194,49 @@ function runPythonTrainingScript(username, res) {
 }
 
 // Function to run the Python script for prediction
+
 function runPythonPredictionScript(audioFileName, res) {
   const pythonExecutable = 'C:/mfcc and gmm/New folder/GMM/myenv/Scripts/python.exe';
   const pythonScript = 'C:/mfcc and gmm/New folder/GMM/predict.py';
   const audioFilePath = audioFileName;
-  
-  // Run the Python script with the audio file name as an argument
+
+  console.log(`Running: ${pythonExecutable} ${pythonScript} ${audioFilePath}`);
+
   const pythonProcess = spawn(pythonExecutable, [pythonScript, audioFilePath]);
 
+  let outputData = '';
+  let errorData = '';
+
   pythonProcess.stdout.on('data', (data) => {
-    console.log(`stdout: ${data}`);
+    outputData += data.toString();
+    console.log(`stdout: ${data.toString()}`);
   });
 
   pythonProcess.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
+    errorData += data.toString();
+    console.error(`stderr: ${data.toString()}`);
   });
 
   pythonProcess.on('close', (code) => {
+    console.log(`Python process exited with code ${code}`);
+
     if (code === 0) {
-      res.json({
-        message: `Audio file uploaded and prediction successfully executed for ${audioFileName}!`,
-      });
+      try {
+        const parsedData = JSON.parse(outputData.trim()); // Parse JSON output
+        res.json(parsedData); // Send JSON response
+      } catch (error) {
+        console.error('JSON Parse Error:', error.message);
+        res.status(500).json({
+          message: 'Error parsing Python script output.',
+          error: error.message,
+          outputData
+        });
+      }
     } else {
       res.status(500).json({
-        message: 'There was an error running the Python prediction script.',
-        errorCode: code
+        message: 'Python script execution failed.',
+        errorCode: code,
+        errorOutput: errorData
       });
     }
   });
